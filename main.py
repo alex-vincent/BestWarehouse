@@ -7,6 +7,9 @@ WAREHOUSE_LOCATIONS = {
     "SDR Distribution": (43.720850, -79.661280),
     "SDR Distribution - Calgary": (51.158150, -114.000840),
     "Office": (47.603230, -122.330276),
+    "Second Closet - Toronto": (43.771750, -79.641735),
+    "Cambridge": (43.369094, -80.290873),
+    "Belleville": (44.162759, -77.383231)
     # Add more warehouses as needed
 }
 
@@ -23,7 +26,7 @@ def get_coordinates_from_address(address):
     geolocator = Nominatim(user_agent="warehouse_allocator", timeout=5)
     location = geolocator.geocode(address)
     if location:
-        print(f"Order with address: {address} has been geocoded sucessfully.")
+        # print(f"Order with address: {address} has been geocoded sucessfully.")
         return (location.latitude, location.longitude)
     else:
         print(f"ERROR: Could not find coordinates for {address}")
@@ -251,6 +254,7 @@ class WarehouseAllocatorGUI(tk.Tk):
         self.orders_label.config(text=f"Orders CSV File: {self.orders_file}")
 
     def start_allocation(self):
+        print("Running...")
         if self.inventory_file and self.orders_file:
             inventory_df = read_csv_file(self.inventory_file)
             orders_df = read_csv_file(self.orders_file)
@@ -281,10 +285,7 @@ class WarehouseAllocatorGUI(tk.Tk):
                         for order in unallocated_orders
                     ]
                 )
-                messagebox.showinfo(
-                    "Unallocated Orders",
-                    f"Unallocated Orders:\n\n{unallocated_orders_str}",
-                )
+                print(f"Unallocated Orders:\n\n{unallocated_orders_str}")
             else:
                 messagebox.showinfo(
                     "All orders allocated", "All orders have been allocated."
