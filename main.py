@@ -202,40 +202,105 @@ def create_excel_report(allocations):
     wb.save("allocation_report.xlsx")
 
 
-def main():
-    inventory_file = "inventory.csv"
-    orders_file = "orders.csv"
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
-    print("Reading inventory and orders data...")
-    inventory_df = read_csv_file(inventory_file)
-    orders_df = read_csv_file(orders_file)
 
-    # Add latitude and longitude columns to the orders DataFrame
-    orders_df["lat"] = 0.0
-    orders_df["lon"] = 0.0
-    for idx, order in orders_df.iterrows():
-        address = f"{order['City']}, {order['Prov/ State']}, {order['Country Code']}"
-        coordinates = get_coordinates_from_address(address)
-        if coordinates:
-            orders_df.at[idx, "lat"] = coordinates[0]
-            orders_df.at[idx, "lon"] = coordinates[1]
+class WarehouseAllocatorGUI(tk.Tk):
+    def __init__(self):
+        super().__init__()
 
-    print("Allocating orders...")
-    allocations, unallocated_orders = allocate_orders(inventory_df, orders_df)
+        self.title("Warehouse Allocator")
 
-    print("Creating Excel report...")
-    create_excel_report(allocations)
-    print("Allocation report generated: allocation_report.xlsx")
+        self.inventory_file = None
+        self.orders_file = None
 
-    if unallocated_orders:
-        print("\nUnallocated Orders:")
-        print("Order ID | SKU | Quantity")
-        for unallocated_order in unallocated_orders:
-            print(
-                f"{unallocated_order[0]} | {unallocated_order[1]} | {unallocated_order[2]}"
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.inventory_label = tk.Label(self, text="Inventory CSV File:")
+        self.inventory_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+
+        self.inventory_button = tk.Button(
+            self, text="Choose File", command=self.load_inventory
+        )
+        self.inventory_button.grid(row=0, column=1, padx=10, pady=10)
+
+        self.orders_label = tk.Label(self, text="Orders CSV File:")
+        self.orders_label.grid(row=1, column=0, padx=10, pady=10, sticky=tk.W)
+
+        self.orders_button = tk.Button(
+            self, text="Choose File", command=self.load_orders
+        )
+        self.orders_button.grid(row=1, column=1, padx=10, pady=10)
+
+        self.start_button = tk.Button(
+            self, text="Start Allocation", command=self.start_allocation
+        )
+        self.start_button.grid(row=2, column=0, padx=10, pady=10, columnspan=2)
+
+        self.quit_button = tk.Button(self, text="Quit", command=self.quit_program)
+        self.quit_button.grid(row=3, column=0, padx=10, pady=10, columnspan=2)
+
+    def load_inventory(self):
+        self.inventory_file = filedialog.askopenfilename()
+        self.inventory_label.config(text=f"Inventory CSV File: {self.inventory_file}")
+
+    def load_orders(self):
+        self.orders_file = filedialog.askopenfilename()
+        self.orders_label.config(text=f"Orders CSV File: {self.orders_file}")
+
+    def start_allocation(self):
+        if self.inventory_file and self.orders_file:
+            inventory_df = read_csv_file(self.inventory_file)
+            orders_df = read_csv_file(self.orders_file)
+
+            # Add your code for processing data (like adding lat and lon columns) here
+            # Add latitude and longitude columns to the orders DataFrame
+            orders_df["lat"] = 0.0
+            orders_df["lon"] = 0.0
+            for idx, order in orders_df.iterrows():
+                address = (
+                    f"{order['City']}, {order['Prov/ State']}, {order['Country Code']}"
+                )
+                coordinates = get_coordinates_from_address(address)
+                if coordinates:
+                    orders_df.at[idx, "lat"] = coordinates[0]
+                    orders_df.at[idx, "lon"] = coordinates[1]
+
+            allocations, unallocated_orders = allocate_orders(inventory_df, orders_df)
+            create_excel_report(allocations)
+            messagebox.showinfo(
+                "Success", "Allocation report generated: allocation_report.xlsx"
             )
-    else:
-        print("\nAll orders have been allocated.")
+
+            if unallocated_orders:
+                unallocated_orders_str = "\n".join(
+                    [
+                        f"Order ID: {order[0]}, SKU: {order[1]}, Quantity: {order[2]}"
+                        for order in unallocated_orders
+                    ]
+                )
+                messagebox.showinfo(
+                    "Unallocated Orders",
+                    f"Unallocated Orders:\n\n{unallocated_orders_str}",
+                )
+            else:
+                messagebox.showinfo(
+                    "All orders allocated", "All orders have been allocated."
+                )
+        else:
+            messagebox.showerror(
+                "Error", "Please select both inventory and orders CSV files."
+            )
+
+    def quit_program(self):
+        self.destroy()
+
+
+def main():
+    app = WarehouseAllocatorGUI()
+    app.mainloop()
 
 
 if __name__ == "__main__":
