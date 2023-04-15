@@ -1,12 +1,12 @@
 import pandas as pd
 from haversine import haversine
 from openpyxl import Workbook
-from geopy.geocoders import Nominatim
+from geopy.geocoders import MapBox
 
 WAREHOUSE_LOCATIONS = {
     "SDR Distribution": (43.720850, -79.661280),
     "SDR Distribution - Calgary": (51.158150, -114.000840),
-    "Office": (47.603230, -122.330276),
+    "Office": (43.6964365, -79.4637599),
     "Second Closet - Toronto": (43.771750, -79.641735),
     "Cambridge": (43.369094, -80.290873),
     "Belleville": (44.162759, -77.383231)
@@ -15,7 +15,7 @@ WAREHOUSE_LOCATIONS = {
 
 
 def read_csv_file(file_name):
-    return pd.read_csv(file_name)
+    return pd.read_csv(file_name, encoding="ISO-8859-1")
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -23,10 +23,12 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 
 
 def get_coordinates_from_address(address):
-    geolocator = Nominatim(user_agent="warehouse_allocator", timeout=5)
+    geolocator = MapBox(
+        api_key="pk.eyJ1IjoiYWxleHZpbmNlbnQiLCJhIjoiY2xnNWhpc2dzMDNpejNxcGNoNThnMWM1byJ9.Y41I4Oxd1yGUxQw7VdI2fQ"
+    )
     location = geolocator.geocode(address)
     if location:
-        # print(f"Order with address: {address} has been geocoded sucessfully.")
+        print(f"Order with address: {address} has been geocoded sucessfully.")
         return (location.latitude, location.longitude)
     else:
         print(f"ERROR: Could not find coordinates for {address}")
@@ -93,6 +95,7 @@ def allocate_orders(inventory_df, orders_df):
                         (
                             order["Order ID"],
                             order["SKU"],
+                            str(order["Order ID"]) + str(order["SKU"]),
                             warehouse_id,
                             distance,
                             required_quantity,
@@ -131,6 +134,7 @@ def allocate_orders(inventory_df, orders_df):
                             (
                                 order["Order ID"],
                                 order["SKU"],
+                                str(order["Order ID"]) + str(order["SKU"]),
                                 warehouse_id,
                                 distance,
                                 required_quantity - allocated_quantity,
@@ -149,6 +153,7 @@ def allocate_orders(inventory_df, orders_df):
                             (
                                 order["Order ID"],
                                 order["SKU"],
+                                str(order["Order ID"]) + str(order["SKU"]),
                                 warehouse_id,
                                 distance,
                                 available_quantity,
@@ -177,7 +182,7 @@ def allocate_orders(inventory_df, orders_df):
                     )
 
     # Remove allocations with 0 quantity
-    allocations = [allocation for allocation in allocations if allocation[4] > 0]
+    allocations = [allocation for allocation in allocations if allocation[5] > 0]
 
     return allocations, unallocated_orders
 
@@ -189,10 +194,11 @@ def create_excel_report(allocations):
 
     ws.cell(row=1, column=1, value="Order ID")
     ws.cell(row=1, column=2, value="SKU")
-    ws.cell(row=1, column=3, value="Warehouse ID")
-    ws.cell(row=1, column=4, value="Distance (km)")
-    ws.cell(row=1, column=5, value="Allocated Quantity")
-    ws.cell(row=1, column=6, value="Split Order")
+    ws.cell(row=1, column=3, value="VlookupUse")
+    ws.cell(row=1, column=4, value="Warehouse ID")
+    ws.cell(row=1, column=5, value="Distance (km)")
+    ws.cell(row=1, column=6, value="Allocated Quantity")
+    ws.cell(row=1, column=7, value="Split Order")
 
     for idx, allocation in enumerate(allocations, 2):
         ws.cell(row=idx, column=1, value=allocation[0])
@@ -201,6 +207,7 @@ def create_excel_report(allocations):
         ws.cell(row=idx, column=4, value=allocation[3])
         ws.cell(row=idx, column=5, value=allocation[4])
         ws.cell(row=idx, column=6, value=allocation[5])
+        ws.cell(row=idx, column=7, value=allocation[6])
 
     wb.save("allocation_report.xlsx")
 
