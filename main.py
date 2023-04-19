@@ -100,6 +100,10 @@ def allocate_orders(inventory_df, orders_df):
                             distance,
                             required_quantity,
                             False,
+                            order["City"],
+                            order["Prov/ State"],
+                            order["Postal/ Zip Code"],
+                            order["Country Code"],
                         )
                     )
                     update_inventory_level(
@@ -139,6 +143,10 @@ def allocate_orders(inventory_df, orders_df):
                                 distance,
                                 required_quantity - allocated_quantity,
                                 True,
+                                order["City"],
+                                order["Prov/ State"],
+                                order["Postal/ Zip Code"],
+                                order["Country Code"],
                             )
                         )
                         update_inventory_level(
@@ -158,6 +166,10 @@ def allocate_orders(inventory_df, orders_df):
                                 distance,
                                 available_quantity,
                                 True,
+                                order["City"],
+                                order["Prov/ State"],
+                                order["Postal/ Zip Code"],
+                                order["Country Code"],
                             )
                         )
                         update_inventory_level(
@@ -199,6 +211,10 @@ def create_excel_report(allocations):
     ws.cell(row=1, column=5, value="Distance (km)")
     ws.cell(row=1, column=6, value="Allocated Quantity")
     ws.cell(row=1, column=7, value="Split Order")
+    ws.cell(row=1, column=8, value="City")
+    ws.cell(row=1, column=9, value="Prov/ State")
+    ws.cell(row=1, column=10, value="Postal/ Zip Code")
+    ws.cell(row=1, column=11, value="Country Code")
 
     for idx, allocation in enumerate(allocations, 2):
         ws.cell(row=idx, column=1, value=allocation[0])
@@ -208,6 +224,10 @@ def create_excel_report(allocations):
         ws.cell(row=idx, column=5, value=allocation[4])
         ws.cell(row=idx, column=6, value=allocation[5])
         ws.cell(row=idx, column=7, value=allocation[6])
+        ws.cell(row=idx, column=8, value=allocation[7])
+        ws.cell(row=idx, column=9, value=allocation[8])
+        ws.cell(row=idx, column=10, value=allocation[9])
+        ws.cell(row=idx, column=11, value=allocation[10])
 
     wb.save("allocation_report.xlsx")
 
