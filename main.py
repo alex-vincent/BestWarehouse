@@ -65,7 +65,7 @@ def allocate_orders(inventory_df, orders_df):
 
         # Try to allocate the entire order to a single warehouse first
         allocated = False
-        for warehouse_id, distance in sorted_warehouses:
+        for warehouse_rank, (warehouse_id, distance) in enumerate(sorted_warehouses):
             can_allocate_all = True
             for index, order in order_group.iterrows():
                 required_sku = order["SKU"]
@@ -100,6 +100,7 @@ def allocate_orders(inventory_df, orders_df):
                             distance,
                             required_quantity,
                             False,
+                            warehouse_rank + 1,
                             order["City"],
                             order["Prov/ State"],
                             order["Postal/ Zip Code"],
@@ -120,7 +121,9 @@ def allocate_orders(inventory_df, orders_df):
 
                 allocated_quantity = 0
 
-                for warehouse_id, distance in sorted_warehouses:
+                for warehouse_rank, (warehouse_id, distance) in enumerate(
+                    sorted_warehouses
+                ):
                     try:
                         available_quantity = inventory_df.loc[
                             (inventory_df["warehouse_id"] == warehouse_id)
@@ -143,6 +146,7 @@ def allocate_orders(inventory_df, orders_df):
                                 distance,
                                 required_quantity - allocated_quantity,
                                 True,
+                                warehouse_rank + 1,
                                 order["City"],
                                 order["Prov/ State"],
                                 order["Postal/ Zip Code"],
@@ -166,6 +170,7 @@ def allocate_orders(inventory_df, orders_df):
                                 distance,
                                 available_quantity,
                                 True,
+                                warehouse_rank + 1,
                                 order["City"],
                                 order["Prov/ State"],
                                 order["Postal/ Zip Code"],
@@ -211,10 +216,11 @@ def create_excel_report(allocations):
     ws.cell(row=1, column=5, value="Distance (km)")
     ws.cell(row=1, column=6, value="Allocated Quantity")
     ws.cell(row=1, column=7, value="Split Order")
-    ws.cell(row=1, column=8, value="City")
-    ws.cell(row=1, column=9, value="Prov/ State")
-    ws.cell(row=1, column=10, value="Postal/ Zip Code")
-    ws.cell(row=1, column=11, value="Country Code")
+    ws.cell(row=1, column=8, value="Warehouse Rank")
+    ws.cell(row=1, column=9, value="City")
+    ws.cell(row=1, column=10, value="Prov/ State")
+    ws.cell(row=1, column=11, value="Postal/ Zip Code")
+    ws.cell(row=1, column=12, value="Country Code")
 
     for idx, allocation in enumerate(allocations, 2):
         ws.cell(row=idx, column=1, value=allocation[0])
@@ -228,6 +234,7 @@ def create_excel_report(allocations):
         ws.cell(row=idx, column=9, value=allocation[8])
         ws.cell(row=idx, column=10, value=allocation[9])
         ws.cell(row=idx, column=11, value=allocation[10])
+        ws.cell(row=idx, column=12, value=allocation[11])
 
     wb.save("allocation_report.xlsx")
 
@@ -299,7 +306,10 @@ class WarehouseAllocatorGUI(tk.Tk):
                     orders_df.at[idx, "lat"] = coordinates[0]
                     orders_df.at[idx, "lon"] = coordinates[1]
 
-            allocations, unallocated_orders = allocate_orders(inventory_df, orders_df)
+            (
+                allocations,
+                unallocated_orders,
+            ) = allocate_orders(inventory_df, orders_df)
             create_excel_report(allocations)
             messagebox.showinfo(
                 "Success", "Allocation report generated: allocation_report.xlsx"
