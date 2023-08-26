@@ -24,7 +24,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 
 def get_coordinates_from_address(address):
     geolocator = MapBox(
-        api_key="pk.eyJ1IjoiYWxleHZpbmNlbnQiLCJhIjoiY2xnNWhpc2dzMDNpejNxcGNoNThnMWM1byJ9.Y41I4Oxd1yGUxQw7VdI2fQ"
+        api_key="ENTER API KEY HERE MAPBOX"
     )
     location = geolocator.geocode(address)
     if location:
